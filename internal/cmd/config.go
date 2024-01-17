@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -99,6 +101,19 @@ func LoadConfig(env Env) (config *Config, err error) {
 	}
 	// Fix for mingsys
 	exePath = strings.Replace(exePath, "\\", "/", -1)
+	// fix for wsl
+	if runtime.GOOS == "windows" {
+		wsl := exec.Command("wsl.exe", "-l", "-v")
+		wslOut := &bytes.Buffer{}
+		wslErr := &bytes.Buffer{}
+		wsl.Stdout = wslOut
+		wsl.Stderr = wslErr
+		err := wsl.Run()
+		if err == nil {
+			exePath = strings.Replace(exePath, "C:", "/mnt/c", 1)
+		}
+
+	}
 	config.SelfPath = exePath
 
 	if config.WorkDir, err = os.Getwd(); err != nil {
